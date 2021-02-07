@@ -1,25 +1,55 @@
-import React from 'react';
-import logo from './logo.svg';
+import { BrowserRouter, Switch, Route } from "react-router-dom";
+
+import Header from "./components/Header";
+import Main from "./components/Main";
+import State from "./components/State";
+
 import './App.css';
+import { useEffect, useState } from "react";
+import { Spinner } from "reactstrap";
+
 
 function App() {
+    
+    const [data, setData] = useState(new Array());
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch(`http://localhost:3100/covid-data`)
+            .then(response => {
+                if (response.status === 200) {
+                    return response.json();
+                }
+            })
+            .then(data => {
+                setData(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.log(err);
+            });
+    },[]);
+    
+    if (loading && data === undefined) {
+        return (
+            <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+        )
+    }
+
+    const StateComponent = (props:any) => {
+        return(
+            <State state={data.filter(s => s.State === props.match.params.id)[0]} />
+        )
+    }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+    <Header/>
+        <Switch>
+            <Route path="/state/:id" component={StateComponent} />
+            <Route path="/" component={() => (<Main data={data} />) } />
+        </Switch>
+    </BrowserRouter>
   );
 }
 
